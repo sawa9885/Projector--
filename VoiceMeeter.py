@@ -1,6 +1,6 @@
 import ctypes
 
-class Voicemeeter:
+class VoiceMeeter:
     def __init__(self):
         try:
             self.vm_remote = ctypes.CDLL("C:\\Program Files (x86)\\VB\\Voicemeeter\\VoicemeeterRemote64.dll")
@@ -80,7 +80,7 @@ class Voicemeeter:
 
 # Example usage
 if __name__ == "__main__":
-    voicemeeter = Voicemeeter()
+    voicemeeter = VoiceMeeter()
     try:
         while True:
             print("Select Setup:")
