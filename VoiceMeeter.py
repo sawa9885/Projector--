@@ -9,7 +9,7 @@ class VoiceMeeter:
             exit(1)
 
         self.initialize_voicemeeter()
-        self.current_setup = "desk"  # Tracks the current setup, defaults to desk
+        self.current_mode = "desk"  # Tracks the current mode, defaults to desk
 
     def initialize_voicemeeter(self):
         result = self.vm_remote.VBVMR_Login()
@@ -49,30 +49,33 @@ class VoiceMeeter:
         except Exception as e:
             print(f"Exception occurred while restarting audio engine: {e}")
 
-    def activate_desk_setup(self):
-        print("Activating Desk Setup")
-        self.set_bus_mute(0, 0)  # Unmute desk speakers (Bus A1)
-        self.set_bus_mute(1, 0)  # Unmute desk speakers (Bus A2)
-        self.set_bus_mute(2, 1)  # Mute projector speakers (Bus A3)
-        self.restart_audio_engine()  # Restart audio engine
-        self.current_setup = "desk"
-
-    def activate_projector_setup(self):
-        print("Activating Projector Setup")
-        self.set_bus_mute(0, 1)  # Mute desk speakers (Bus A1)
-        self.set_bus_mute(1, 1)  # Mute desk speakers (Bus A2)
-        self.set_bus_mute(2, 0)  # Unmute projector speakers (Bus A3)
-        self.restart_audio_engine()  # Restart audio engine
-        self.current_setup = "projector"
-
-    def toggle_setup(self):
+    def set_mode(self, mode):
         """
-        Toggles between Desk and Projector setups.
+        Sets the audio configuration mode (desk, projector, or bedtime).
+        :param mode: The desired mode ("desk", "projector", or "bedtime").
+        :return: Status indicating success or failure.
         """
-        if self.current_setup == "desk":
-            self.activate_projector_setup()
-        else:
-            self.activate_desk_setup()
+        try:
+            if mode == "desk":
+                self.set_bus_mute(0, 0)  # Unmute desk speakers (Bus A1)
+                self.set_bus_mute(1, 0)  # Unmute desk speakers (Bus A2)
+                self.set_bus_mute(2, 1)  # Mute projector speakers (Bus A3)
+            elif mode == "projector":
+                self.set_bus_mute(0, 1)  # Mute desk speakers (Bus A1)
+                self.set_bus_mute(1, 1)  # Mute desk speakers (Bus A2)
+                self.set_bus_mute(2, 0)  # Unmute projector speakers (Bus A3)
+            elif mode == "bedtime":
+                self.set_bus_mute(0, 1)  # Mute desk speakers (Bus A1)
+                self.set_bus_mute(1, 1)  # Mute desk speakers (Bus A2)
+                self.set_bus_mute(2, 1)  # Mute projector speakers (Bus A3)
+            else:
+                return {"status": "error", "message": f"Invalid mode: {mode}"}
+
+            self.restart_audio_engine()
+            self.current_mode = mode
+            return {"status": "success", "message": f"Mode set to {mode}"}
+        except Exception as e:
+            return {"status": "error", "message": str(e)}
 
     def logout(self):
         self.vm_remote.VBVMR_Logout()
@@ -83,20 +86,22 @@ if __name__ == "__main__":
     voicemeeter = VoiceMeeter()
     try:
         while True:
-            print("Select Setup:")
+            print("\nSelect Mode:")
             print("1. Desk Setup")
             print("2. Projector Setup")
-            print("3. Toggle Setup")
+            print("3. Bedtime Setup")
             choice = input("Enter 1, 2, or 3: ").strip()
 
             if choice == "1":
-                voicemeeter.activate_desk_setup()
+                response = voicemeeter.set_mode("desk")
             elif choice == "2":
-                voicemeeter.activate_projector_setup()
+                response = voicemeeter.set_mode("projector")
             elif choice == "3":
-                voicemeeter.toggle_setup()
+                response = voicemeeter.set_mode("bedtime")
             else:
-                print("Invalid choice.")
+                response = {"status": "error", "message": "Invalid choice."}
+
+            print(f"Response: {response}")
 
     except KeyboardInterrupt:
         print("Exiting script.")

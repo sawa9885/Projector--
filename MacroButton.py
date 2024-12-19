@@ -5,29 +5,21 @@ class MacroButton:
 
     # Define the key combinations
     ACTION_KEYS = {
-        keyboard.Key.ctrl_l,
-        keyboard.Key.shift,
-        keyboard.Key.alt_l,
-        49  # ASCII code for '1'
+        "desk": {keyboard.Key.ctrl_l, keyboard.Key.shift, keyboard.Key.alt_l, 49},  # ASCII code for '1'
+        "bed": {keyboard.Key.ctrl_l, keyboard.Key.shift, keyboard.Key.alt_l, 50},  # ASCII code for '2'
+        "projector": {keyboard.Key.ctrl_l, keyboard.Key.shift, keyboard.Key.alt_l, 51},  # ASCII code for '3'
+        "quit": {keyboard.Key.ctrl_l, keyboard.Key.shift, keyboard.Key.alt_l, 81},  # ASCII code for 'Q'
     }
-    EXIT_KEYS = {
-        keyboard.Key.ctrl_l,
-        keyboard.Key.shift,
-        keyboard.Key.alt_l,
-        81  # ASCII code for 'Q'
-    }
+
     current_keys = set()  # Tracks currently pressed keys
 
     @classmethod
-    def on_action(cls):
-        """Action triggered when the action key combination is pressed."""
-        print("Macro action triggered: Ctrl + Shift + Alt + 1")
-
-    @classmethod
-    def exit_script(cls):
-        """Action triggered to exit the script."""
-        print("Exiting script...")
-        exit(0)
+    def on_action(cls, mode):
+        """Action triggered when a key combination is pressed."""
+        if mode == "quit":
+            print("Exiting script...")
+            exit(0)
+        print(f"Macro action triggered: {mode} mode")
 
     @classmethod
     def listen(cls):
@@ -35,18 +27,16 @@ class MacroButton:
         def handle_press(key):
             # Add key to the set, handling raw key codes and Key objects
             cls.current_keys.add(key.vk if hasattr(key, 'vk') else key)
-            # Check for the action keys
-            if cls.ACTION_KEYS.issubset(cls.current_keys):
-                cls.on_action()
-            # Check for the exit keys
-            if cls.EXIT_KEYS.issubset(cls.current_keys):
-                cls.exit_script()
+            # Check for each action key combination
+            for mode, keys in cls.ACTION_KEYS.items():
+                if keys.issubset(cls.current_keys):
+                    cls.on_action(mode)
 
         def handle_release(key):
             # Remove key from the set, handling raw key codes and Key objects
             cls.current_keys.discard(key.vk if hasattr(key, 'vk') else key)
 
-        print("Listening for Ctrl + Shift + Alt + 1 (action) and Ctrl + Shift + Alt + Q (exit)...")
+        print("Listening for key combinations: Ctrl+Shift+Alt+1 (Desk), Ctrl+Shift+Alt+2 (Bed), Ctrl+Shift+Alt+3 (Projector), Ctrl+Shift+Alt+Q (Quit)...")
         with keyboard.Listener(on_press=handle_press, on_release=handle_release) as listener:
             listener.join()
 

@@ -2,55 +2,62 @@ import subprocess
 
 class DisplayFusion:
     def __init__(self):
-        self.current_setup = "desk"  # Tracks the current setup, defaults to desk
+        self.current_mode = "desk"  # Tracks the current mode, defaults to desk
 
-    def switch_displayfusion_profile(self, profile_name):
+    def _switch_displayfusion_profile(self, profile_name):
         try:
-            subprocess.run(["C:\Program Files\DisplayFusion\DisplayFusionCommand.exe", "-monitorloadprofile", profile_name], check=True)
-            print(f"Switched to profile: {profile_name}")
+            subprocess.run([
+                "C:\\Program Files\\DisplayFusion\\DisplayFusionCommand.exe", 
+                "-monitorloadprofile", 
+                profile_name
+            ], check=True)
+            return {"status": "success", "message": f"Switched to profile: {profile_name}"}
         except FileNotFoundError:
-            print("Error: DisplayFusionCommand.exe not found. Ensure DisplayFusion is installed and the path is correct.")
+            return {"status": "error", "message": "DisplayFusionCommand.exe not found. Ensure DisplayFusion is installed and the path is correct."}
         except subprocess.CalledProcessError as e:
-            print(f"Error switching to profile: {profile_name}. Details: {e}")
+            return {"status": "error", "message": f"Error switching to profile: {profile_name}. Details: {e}"}
 
-    def activate_desk_setup(self):
-        print("Activating Desk Setup")
-        self.switch_displayfusion_profile("DeskSetup")
-        self.current_setup = "desk"
-
-    def activate_projector_setup(self):
-        print("Activating Projector Setup")
-        self.switch_displayfusion_profile("ProjectorSetup")
-        self.current_setup = "projector"
-
-    def toggle_setup(self):
+    def set_mode(self, mode):
         """
-        Toggles between Desk and Projector setups.
+        Sets the display configuration mode (desk, projector, or bed).
+        :param mode: The desired mode ("desk", "projector", or "bed").
+        :return: Status indicating success or failure.
         """
-        if self.current_setup == "desk":
-            self.activate_projector_setup()
+        if mode == "desk":
+            result = self._switch_displayfusion_profile("DeskSetup")
+        elif mode == "projector":
+            result = self._switch_displayfusion_profile("ProjectorSetup")
+        elif mode == "bed":
+            result = self._switch_displayfusion_profile("BedSetup")
         else:
-            self.activate_desk_setup()
+            return {"status": "error", "message": f"Invalid mode: {mode}"}
+
+        if result["status"] == "success":
+            self.current_mode = mode
+
+        return result
 
 # Example usage
 if __name__ == "__main__":
     displayfusion = DisplayFusion()
     try:
         while True:
-            print("Select Setup:")
+            print("\nSelect Mode:")
             print("1. Desk Setup")
             print("2. Projector Setup")
-            print("3. Toggle Setup")
+            print("3. Bed Setup")
             choice = input("Enter 1, 2, or 3: ").strip()
 
             if choice == "1":
-                displayfusion.activate_desk_setup()
+                response = displayfusion.set_mode("desk")
             elif choice == "2":
-                displayfusion.activate_projector_setup()
+                response = displayfusion.set_mode("projector")
             elif choice == "3":
-                displayfusion.toggle_setup()
+                response = displayfusion.set_mode("bed")
             else:
-                print("Invalid choice.")
+                response = {"status": "error", "message": "Invalid choice."}
+
+            print(f"Response: {response}")
 
     except KeyboardInterrupt:
         print("Exiting script.")
