@@ -74,11 +74,13 @@ if __name__ == "__main__":
 
     # Initialize Desk Plug
     desk_plug = DeskPlug(api_key=API_KEY, device_id=DEVICE_ID, model=MODEL)
+    
+    desk_plug.set_mode("projector")
 
     # Test modes
-    modes = ["projector", "desk", "bedtime", "invalid"]
-    for mode in modes:
-        print(f"Setting mode to {mode}...")
-        response = desk_plug.set_mode(mode)
-        print("Response:", response)
-        time.sleep(2)  # Delay between tests
+    # modes = ["projector", "desk", "bedtime", "invalid"]
+    # for mode in modes:
+    #     print(f"Setting mode to {mode}...")
+    #     response = desk_plug.set_mode(mode)
+    #     print("Response:", response)
+    #     time.sleep(2)  # Delay between tests
