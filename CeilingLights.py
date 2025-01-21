@@ -1,5 +1,4 @@
 import requests
-import time
 
 class CeilingLights:
     def __init__(self, api_key, devices):
@@ -11,6 +10,7 @@ class CeilingLights:
         self.api_key = api_key
         self.devices = devices
         self.base_url = "https://developer-api.govee.com/v1/devices/control"
+        self.states = {device["device_id"]: None for device in devices}  # Track the state of each device
 
     def _send_command(self, device_id, model, command, value):
         """
@@ -48,46 +48,35 @@ class CeilingLights:
         :return: Results for each device.
         """
         results = []
+        desired_state = "on" if mode == "desk" else "off"
+
         for device in self.devices:
             device_id = device["device_id"]
             model = device["sku"]
 
-            if mode == "desk":
-                # Turn on the lights
-                result_on = self._send_command(device_id, model, "turn", "on")
-                results.append({"device_id": device_id, "mode": mode, "result": result_on})
+            # Check if the device already has the desired state
+            if self.states[device_id] == desired_state:
+                results.append({
+                    "device_id": device_id,
+                    "status": "success",
+                    "message": f"Ceiling Light {device_id} was already {desired_state}."
+                })
+                continue
 
-            elif mode in ["projector", "bedtime"]:
-                # Turn off the lights
-                result_off = self._send_command(device_id, model, "turn", "off")
-                results.append({"device_id": device_id, "mode": mode, "result": result_off})
-
+            # Send the command to update the device state
+            result = self._send_command(device_id, model, "turn", desired_state)
+            if "error" in result:
+                results.append({
+                    "device_id": device_id,
+                    "status": "error",
+                    "message": result["error"]
+                })
             else:
-                # Invalid mode
-                results.append({"device_id": device_id, "mode": mode, "result": {"error": f"Invalid mode: {mode}"}})
+                self.states[device_id] = desired_state  # Update the state
+                results.append({
+                    "device_id": device_id,
+                    "status": "success",
+                    "message": f"Ceiling Light {device_id} turned {desired_state}."
+                })
 
         return results
-
-
-if __name__ == "__main__":
-    # Your Govee API key
-    API_KEY = "5e6a480a-716a-4ad9-bf9c-67413c645028"
-
-    # Device details
-    DEVICES = [
-        {"device_id": "48:0E:D0:C9:07:BA:4D:A0", "sku": "H6008"},
-        {"device_id": "7E:2C:D0:C9:07:BA:D0:A0", "sku": "H6008"},
-    ]
-
-    # Initialize Ceiling Lights
-    ceiling_lights = CeilingLights(api_key=API_KEY, devices=DEVICES)
-
-    # Test modes
-    modes = ["projector", "desk", "bedtime", "invalid"]
-    for mode in modes:
-        print(f"Setting mode to {mode}...")
-        responses = ceiling_lights.set_mode(mode)
-        for response in responses:
-            print("Response:", response)
-        print("-" * 40)
-        time.sleep(2)  # Delay between tests

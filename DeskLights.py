@@ -1,5 +1,4 @@
 import requests
-import time
 
 class DeskLights:
     def __init__(self, api_key, device_id, model):
@@ -13,6 +12,7 @@ class DeskLights:
         self.device_id = device_id
         self.model = model
         self.base_url = "https://developer-api.govee.com/v1/devices/control"
+        self.state = "on"  # Track the current state of the device ('on' or 'off')
 
     def _send_command(self, command, value):
         """
@@ -47,36 +47,23 @@ class DeskLights:
         :param mode: The desired mode (desk, projector, bedtime).
         :return: Results indicating success or failure.
         """
-        if mode == "desk":
-            # Turn on the Desk Lights
-            result = self._send_command("turn", "on")
-        elif mode in ["projector", "bedtime"]:
-            # Turn off the Desk Lights
-            result = self._send_command("turn", "off")
-        else:
-            # Invalid mode
-            return {"status": "error", "message": f"Invalid mode: {mode}"}
+        try:
+            desired_state = "on" if mode == "desk" else "off"
 
-        if "error" in result:
-            return {"status": "error", "message": result["error"]}
+            if self.state == desired_state:
+                return {
+                    "status": "success",
+                    "message": f"Desk Lights were already {desired_state}."
+                }
 
-        return {"status": "success", "message": f"Desk Lights mode set to {mode}"}
+            result = self._send_command("turn", desired_state)
+            if "error" in result:
+                return {"status": "error", "message": result["error"]}
 
-if __name__ == "__main__":
-    # Your Govee API key
-    API_KEY = "5e6a480a-716a-4ad9-bf9c-67413c645028"
-
-    # Device details for Desk Lights
-    DEVICE_ID = "D4:CA:D5:0E:C2:06:5C:5C"
-    MODEL = "H6056"
-
-    # Initialize Desk Lights
-    desk_lights = DeskLights(api_key=API_KEY, device_id=DEVICE_ID, model=MODEL)
-
-    # Test modes
-    modes = ["projector", "desk", "bedtime", "invalid"]
-    for mode in modes:
-        print(f"Setting mode to {mode}...")
-        response = desk_lights.set_mode(mode)
-        print("Response:", response)
-        time.sleep(2)  # Delay between tests
+            self.state = desired_state  # Update the current state
+            return {
+                "status": "success",
+                "message": f"Desk Lights turned {desired_state}."
+            }
+        except Exception as e:
+            return {"status": "error", "message": str(e)}

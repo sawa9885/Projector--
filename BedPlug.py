@@ -1,5 +1,4 @@
 import requests
-import time
 
 class BedPlug:
     def __init__(self, api_key, device_id, model):
@@ -13,6 +12,7 @@ class BedPlug:
         self.device_id = device_id
         self.model = model
         self.base_url = "https://developer-api.govee.com/v1/devices/control"
+        self.state = "on"  # Track the current state of the device ('on' or 'off')
 
     def _send_command(self, command, value):
         """
@@ -48,37 +48,22 @@ class BedPlug:
         :return: Status indicating success or failure.
         """
         try:
-            if mode in ["projector", "bedtime"]:
-                result = self._send_command("turn", "off")
-            elif mode == "desk":
-                result = self._send_command("turn", "on")
-            else:
-                return {"status": "error", "message": f"Invalid mode: {mode}"}
+            desired_state = "off" if mode in ["projector", "bedtime"] else "on"
 
+            if self.state == desired_state:
+                return {
+                    "status": "success",
+                    "message": f"Bed Plug was already {desired_state}."
+                }
+
+            result = self._send_command("turn", desired_state)
             if "error" in result:
                 return {"status": "error", "message": result["error"]}
-            
-            return {"status": "success", "message": f"Bed Plug mode set to {mode}"}
+
+            self.state = desired_state  # Update the current state
+            return {
+                "status": "success",
+                "message": f"Bed Plug turned {desired_state}."
+            }
         except Exception as e:
             return {"status": "error", "message": str(e)}
-
-if __name__ == "__main__":
-    import time
-
-    # Your Govee API key
-    API_KEY = "5e6a480a-716a-4ad9-bf9c-67413c645028"
-
-    # Device details for Bed Plug
-    DEVICE_ID = "73:51:D0:C9:07:60:3E:B8"
-    MODEL = "H5083"
-
-    # Initialize Bed Plug
-    bed_plug = BedPlug(api_key=API_KEY, device_id=DEVICE_ID, model=MODEL)
-
-    # Test modes
-    modes = ["projector", "desk", "bedtime", "invalid"]
-    for mode in modes:
-        print(f"Setting mode to {mode}...")
-        response = bed_plug.set_mode(mode)
-        print("Response:", response)
-        time.sleep(2)  # Delay between tests

@@ -2,7 +2,7 @@ import subprocess
 
 class DisplayFusion:
     def __init__(self):
-        self.current_mode = "desk"  # Tracks the current mode, defaults to desk
+        self.current_mode = None  # Tracks the current mode
 
     def _switch_displayfusion_profile(self, profile_name):
         try:
@@ -23,6 +23,12 @@ class DisplayFusion:
         :param mode: The desired mode ("desk", "projector", or "bed").
         :return: Status indicating success or failure.
         """
+        if self.current_mode == mode:
+            return {
+                "status": "success", 
+                "message": f"DisplayFusion is already in {mode} mode."
+            }
+
         if mode == "desk":
             result = self._switch_displayfusion_profile("DeskSetup")
         elif mode == "projector":
@@ -36,28 +42,3 @@ class DisplayFusion:
             self.current_mode = mode
 
         return result
-
-# Example usage
-if __name__ == "__main__":
-    displayfusion = DisplayFusion()
-    try:
-        while True:
-            print("\nSelect Mode:")
-            print("1. Desk Setup")
-            print("2. Projector Setup")
-            print("3. Bed Setup")
-            choice = input("Enter 1, 2, or 3: ").strip()
-
-            if choice == "1":
-                response = displayfusion.set_mode("desk")
-            elif choice == "2":
-                response = displayfusion.set_mode("projector")
-            elif choice == "3":
-                response = displayfusion.set_mode("bed")
-            else:
-                response = {"status": "error", "message": "Invalid choice."}
-
-            print(f"Response: {response}")
-
-    except KeyboardInterrupt:
-        print("Exiting script.")
